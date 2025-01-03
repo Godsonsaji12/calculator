@@ -1,8 +1,9 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { Plus, Minus, Edit2, Save, X, MoreVertical } from 'lucide-react';
+import { Plus, Minus, Edit2, Save, X, MoreVertical, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const FoodCalculator = () => {
@@ -15,12 +16,12 @@ const FoodCalculator = () => {
   };
 
   const [selectedItems, setSelectedItems] = useState([]);
-  const [editingId, setEditingId] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
   const [editingPrice, setEditingPrice] = useState('');
   const [newItem, setNewItem] = useState({ name: '', price: '' });
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
-  // Load items from localStorage when component mounts
   useEffect(() => {
     const savedItems = localStorage.getItem('foodItems');
     if (savedItems) {
@@ -28,7 +29,6 @@ const FoodCalculator = () => {
     }
   }, []);
 
-  // Save items to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('foodItems', JSON.stringify(selectedItems));
   }, [selectedItems]);
@@ -41,6 +41,10 @@ const FoodCalculator = () => {
       }
       return item;
     }));
+  };
+
+  const resetQuantities = () => {
+    setSelectedItems(items => items.map(item => ({ ...item, quantity: 0 })));
   };
 
   const handleQuantityChange = (id, e) => {
@@ -76,8 +80,9 @@ const FoodCalculator = () => {
   };
 
   const startEditing = (item) => {
-    setEditingId(item.id);
+    setEditingItem(item);
     setEditingPrice(item.price.toString());
+    setShowEditDialog(true);
   };
 
   const handlePriceEditChange = (e) => {
@@ -90,17 +95,13 @@ const FoodCalculator = () => {
   const saveNewPrice = () => {
     if (editingPrice !== '' && !isNaN(editingPrice) && Number(editingPrice) >= 0) {
       setSelectedItems(items => items.map(item =>
-        item.id === editingId
+        item.id === editingItem.id
           ? { ...item, price: Number(parseFloat(editingPrice).toFixed(2)) }
           : item
       ));
     }
-    setEditingId(null);
-    setEditingPrice('');
-  };
-
-  const cancelEditing = () => {
-    setEditingId(null);
+    setShowEditDialog(false);
+    setEditingItem(null);
     setEditingPrice('');
   };
 
@@ -191,14 +192,12 @@ const FoodCalculator = () => {
 
           <div className="space-y-4">
             {selectedItems.map(item => (
-              <div key={item.id} className="flex items-center justify-between p-4 border rounded hover:bg-gray-50">
+              <div key={item.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 border rounded hover:bg-gray-50 gap-4">
                 <div className="flex-1">
                   <h3 className="font-medium">{item.name}</h3>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm text-gray-500">{formatIndianPrice(item.price)} each</p>
-                  </div>
+                  <p className="text-sm text-gray-500">{formatIndianPrice(item.price)} each</p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 self-end md:self-auto">
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
@@ -226,62 +225,71 @@ const FoodCalculator = () => {
                     </Button>
                   </div>
                   
-                  {editingId === item.id ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        value={editingPrice}
-                        onChange={handlePriceEditChange}
-                        className="w-24 p-2 border rounded"
-                        min="0"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={saveNewPrice}
-                        className="bg-green-500 hover:bg-green-600"
-                      >
-                        <Save className="w-4 h-4" />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon" className="h-8 w-8">
+                        <MoreVertical className="w-4 h-4" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={cancelEditing}
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => startEditing(item)}>
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Edit Price
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-red-500 focus:text-red-500"
+                        onClick={() => deleteItem(item.id)}
                       >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => startEditing(item)}>
-                          <Edit2 className="w-4 h-4 mr-2" />
-                          Edit Price
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-500 focus:text-red-500"
-                          onClick={() => deleteItem(item.id)}
-                        >
-                          <X className="w-4 h-4 mr-2" />
-                          Delete Item
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                        <X className="w-4 h-4 mr-2" />
+                        Delete Item
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="text-right text-xl font-semibold">
-            Total: {formatIndianPrice(total)}
+          <div className="flex items-center justify-between border-t pt-4">
+            <Button
+              variant="outline"
+              onClick={resetQuantities}
+              className="w-auto"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset All
+            </Button>
+            <div className="text-xl font-semibold">
+              Total: {formatIndianPrice(total)}
+            </div>
           </div>
         </div>
       </CardContent>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Price for {editingItem?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <input
+              type="number"
+              value={editingPrice}
+              onChange={handlePriceEditChange}
+              className="w-full p-2 border rounded"
+              min="0"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={saveNewPrice} className="bg-green-500 hover:bg-green-600">
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
