@@ -1,11 +1,12 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { Plus, Minus, Edit2, Save, X, MoreVertical, RotateCcw, Calculator } from 'lucide-react';
+import { Plus, Minus, Edit2, Save, X, MoreVertical, RotateCcw, Calculator, ShoppingCart, Package, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
+// ... (keep the formatIndianPrice and CalculatorDialog components from previous update)
 const formatIndianPrice = (price) => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -29,7 +30,6 @@ const CalculatorDialog = ({ isOpen, onClose, currentTotal }) => {
 
   const handleOperator = (op) => {
     if (display !== 'Error') {
-      // Prevent adding operator after operator
       const lastChar = display.slice(-1);
       if (!['+', '-', '*', '/'].includes(lastChar)) {
         setDisplay(display + op);
@@ -44,7 +44,6 @@ const CalculatorDialog = ({ isOpen, onClose, currentTotal }) => {
       if (display.includes('total')) {
         expression = display.replace(/total/g, currentTotal.toString());
       }
-      // Validate expression before evaluation
       if (/^[0-9+\-*/.\s()total]+$/.test(expression)) {
         const result = eval(expression);
         if (isFinite(result)) {
@@ -92,39 +91,51 @@ const CalculatorDialog = ({ isOpen, onClose, currentTotal }) => {
     setHasCalculated(false);
   };
 
+  const buttonConfig = [
+    { label: 'C', onClick: clear, className: 'bg-red-500 hover:bg-red-600 text-white' },
+    { label: '←', onClick: handleBackspace, className: 'bg-gray-500 hover:bg-gray-600 text-white' },
+    { label: 'Total', onClick: addTotal, className: 'bg-blue-500 hover:bg-blue-600 text-white col-span-2' },
+    { label: '7', onClick: () => handleNumber('7') },
+    { label: '8', onClick: () => handleNumber('8') },
+    { label: '9', onClick: () => handleNumber('9') },
+    { label: '÷', onClick: () => handleOperator('/'), className: 'bg-violet-500 hover:bg-violet-600 text-white' },
+    { label: '4', onClick: () => handleNumber('4') },
+    { label: '5', onClick: () => handleNumber('5') },
+    { label: '6', onClick: () => handleNumber('6') },
+    { label: '×', onClick: () => handleOperator('*'), className: 'bg-violet-500 hover:bg-violet-600 text-white' },
+    { label: '1', onClick: () => handleNumber('1') },
+    { label: '2', onClick: () => handleNumber('2') },
+    { label: '3', onClick: () => handleNumber('3') },
+    { label: '-', onClick: () => handleOperator('-'), className: 'bg-violet-500 hover:bg-violet-600 text-white' },
+    { label: '0', onClick: () => handleNumber('0') },
+    { label: '.', onClick: () => handleNumber('.') },
+    { label: '=', onClick: calculate, className: 'bg-green-500 hover:bg-green-600 text-white' },
+    { label: '+', onClick: () => handleOperator('+'), className: 'bg-violet-500 hover:bg-violet-600 text-white' },
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md p-0">
+        <DialogHeader className="p-4 bg-gray-100">
           <DialogTitle>Calculator</DialogTitle>
         </DialogHeader>
-        <div className="p-2 sm:p-4">
-          <div className="bg-gray-100 p-4 rounded mb-4 text-right text-xl font-mono break-all min-h-[60px] flex items-center justify-end">
+        <div className="p-4">
+          <div className="bg-gray-900 p-4 rounded-lg mb-4 text-right text-2xl font-mono break-all min-h-[80px] flex items-center justify-end text-white">
             {display}
           </div>
-          <div className="grid grid-cols-4 gap-1 sm:gap-2">
-            <Button variant="outline" onClick={clear} className="col-span-1">
-              C
-            </Button>
-            <Button variant="outline" onClick={handleBackspace} className="col-span-1">
-              ←
-            </Button>
-            <Button variant="outline" onClick={addTotal} className="col-span-2">
-              Add Total
-            </Button>
-            
-            {['7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', '0', '.', '=', '+'].map((btn) => (
+          <div className="grid grid-cols-4 gap-2">
+            {buttonConfig.map((btn, index) => (
               <Button
-                key={btn}
-                variant="outline"
-                onClick={() => {
-                  if (btn === '=') calculate();
-                  else if (['+', '-', '*', '/'].includes(btn)) handleOperator(btn);
-                  else handleNumber(btn);
-                }}
-                className="aspect-square sm:aspect-auto text-lg"
+                key={index}
+                onClick={btn.onClick}
+                className={`
+                  h-14 text-lg font-semibold rounded-lg transition-all duration-200
+                  ${btn.className || 'bg-gray-200 hover:bg-gray-300 text-gray-800'}
+                  ${btn.label === 'Total' ? 'col-span-2' : ''}
+                  active:scale-95
+                `}
               >
-                {btn}
+                {btn.label}
               </Button>
             ))}
           </div>
@@ -143,6 +154,7 @@ const FoodCalculator = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
 
+  // ... (keep all the existing state management functions)
   useEffect(() => {
     const savedItems = localStorage.getItem('foodItems');
     if (savedItems) {
@@ -248,25 +260,31 @@ const FoodCalculator = () => {
   );
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center">Price Calculator</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          <div className="flex justify-end">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4 md:p-8">
+      <Card className="w-full max-w-3xl mx-auto shadow-xl">
+        <CardHeader className="bg-white rounded-t-lg border-b">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ShoppingCart className="w-8 h-8 text-indigo-600" />
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Calculator
+              </CardTitle>
+            </div>
             <Button
               onClick={() => setShowAddForm(true)}
-              className="bg-blue-500 hover:bg-blue-600 w-full md:w-auto"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all duration-200 hover:shadow-lg"
             >
-              Add New Item
+              <Plus className="w-5 h-5 mr-2" /> Add Item
             </Button>
           </div>
-
+        </CardHeader>
+        
+        <CardContent className="p-6">
           {showAddForm && (
-            <div className="p-3 md:p-4 border rounded bg-gray-50">
-              <div className="flex flex-col space-y-3">
-                <div className="w-full">
+            <div className="mb-6 bg-white p-6 rounded-lg shadow-md border border-indigo-100">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Add New Item</h3>
+              <div className="space-y-4">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Item Name
                   </label>
@@ -275,10 +293,10 @@ const FoodCalculator = () => {
                     placeholder="Enter item name"
                     value={newItem.name}
                     onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                   />
                 </div>
-                <div className="w-full">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Price
                   </label>
@@ -287,148 +305,167 @@ const FoodCalculator = () => {
                     placeholder="Enter price"
                     value={newItem.price}
                     onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-                    className="w-full p-2 border rounded"
-                    step="1"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     min="0"
+                    step="1"
                   />
                 </div>
-              </div>
-              <div className="flex gap-2 justify-end mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAddForm(false)}
-                  className="w-full md:w-auto"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={addNewItem}
-                  className="bg-blue-500 hover:bg-blue-600 w-full md:w-auto"
-                >
-                  Add Item
-                </Button>
+                <div className="flex gap-3 justify-end pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAddForm(false)}
+                    className="border-gray-300"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={addNewItem}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  >
+                    Add Item
+                  </Button>
+                </div>
               </div>
             </div>
           )}
 
           <div className="space-y-4">
-            {selectedItems.map(item => (
-              <div key={item.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 border rounded hover:bg-gray-50 gap-4">
-                <div className="flex-1">
-                  <h3 className="font-medium">{item.name}</h3>
-                  <p className="text-sm text-gray-500">{formatIndianPrice(item.price)} each</p>
-                </div>
-                <div className="flex items-center gap-4 self-end md:self-auto">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => decrementQuantity(item.id)}
-                      className="h-8 w-8"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                    <input
-                      type="text"
-                      value={item.quantity}
-                      onChange={(e) => handleQuantityChange(item.id, e)}
-                      onBlur={(e) => handleBlur(item.id, e)}
-                      className="w-16 p-2 text-center border rounded"
-                      placeholder="0"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => incrementQuantity(item.id)}
-                      className="h-8 w-8"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
+            {selectedItems.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-600 mb-2">No items added yet</h3>
+                <p className="text-gray-500">Click the "Add Item" button to get started</p>
+              </div>
+            ) : (
+              selectedItems.map(item => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-lg border border-gray-200 hover:border-indigo-200 transition-all duration-200 hover:shadow-md"
+                >
+                  <div className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-800">{item.name}</h3>
+                      <p className="text-sm text-indigo-600 font-medium">
+                        {formatIndianPrice(item.price)} each
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => decrementQuantity(item.id)}
+                          className="h-8 w-8 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                        <input
+                          type="text"
+                          value={item.quantity}
+                          onChange={(e) => handleQuantityChange(item.id, e)}
+                          onBlur={(e) => handleBlur(item.id, e)}
+                          className="w-16 p-2 text-center border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="0"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => incrementQuantity(item.id)}
+                          className="h-8 w-8 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => startEditing(item)} className="text-blue-600">
+                            <Edit2 className="w-4 h-4 mr-2" />
+                            Edit Price
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => deleteItem(item.id)} className="text-red-600">
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete Item
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-8 w-8">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => startEditing(item)}>
-                        <Edit2 className="w-4 h-4 mr-2" />
-                        Edit Price
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-red-500 focus:text-red-500"
-                        onClick={() => deleteItem(item.id)}
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        Delete Item
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                </div>
+              ))
+            )}
+          </div>
+
+          {selectedItems.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={resetQuantities}
+                    className="border-gray-300 hover:bg-gray-50"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Reset All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCalculator(true)}
+                    className="border-gray-300 hover:bg-gray-50"
+                  >
+                    <Calculator className="w-4 h-4 mr-2" />
+                    Calculator
+                  </Button>
+                </div>
+                <div className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  Total: {formatIndianPrice(total)}
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between border-t pt-4 space-x-4">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={resetQuantities}
-                className="w-auto"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reset All
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowCalculator(true)}
-                className="w-auto"
-              >
-                <Calculator className="w-4 h-4 mr-2" />
-                Calculator
-              </Button>
             </div>
-            <div className="text-xl font-semibold">
-              Total: {formatIndianPrice(total)}
-            </div>
-          </div>
-        </div>
-
-        <CalculatorDialog 
-          isOpen={showCalculator}
-          onClose={() => setShowCalculator(false)}
-          currentTotal={total}
-        />
-      </CardContent>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Price for {editingItem?.name}</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">
+              Edit Price for {editingItem?.name}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <input
-            type="number"
-                value={editingPrice}
-                onChange={handlePriceEditChange}
-                className="w-full p-2 border rounded"
-                min="0"
-              />
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={saveNewPrice} className="bg-green-500 hover:bg-green-600">
-                  Save
-                </Button>
-              </div>
+              type="number"
+              value={editingPrice}
+              onChange={handlePriceEditChange}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              min="0"
+            />
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={saveNewPrice} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                Save Changes
+              </Button>
             </div>
-          </DialogContent>
-        </Dialog>
-      </Card>
-    );
-  };
-  
-  export default FoodCalculator;
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <CalculatorDialog 
+        isOpen={showCalculator}
+        onClose={() => setShowCalculator(false)}
+        currentTotal={total}
+      />
+    </div>
+  );
+};
+
+export default FoodCalculator;
