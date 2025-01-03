@@ -14,20 +14,26 @@ const FoodCalculator = () => {
     }).format(price).replace('INR', '₹');
   };
 
-  const [selectedItems, setSelectedItems] = useState(() => {
-    const savedItems = localStorage.getItem('foodItems');
-    return savedItems ? JSON.parse(savedItems) : [];
-  });
-
+  const [selectedItems, setSelectedItems] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editingPrice, setEditingPrice] = useState('');
   const [newItem, setNewItem] = useState({ name: '', price: '' });
   const [showAddForm, setShowAddForm] = useState(false);
 
+  // Load items from localStorage when component mounts
+  useEffect(() => {
+    const savedItems = localStorage.getItem('foodItems');
+    if (savedItems) {
+      setSelectedItems(JSON.parse(savedItems));
+    }
+  }, []);
+
+  // Save items to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('foodItems', JSON.stringify(selectedItems));
   }, [selectedItems]);
 
+  // Rest of the component code remains the same
   const updateQuantity = (id, value) => {
     setSelectedItems(items => items.map(item => {
       if (item.id === id) {
