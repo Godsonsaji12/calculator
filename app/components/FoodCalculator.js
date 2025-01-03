@@ -33,7 +33,6 @@ const FoodCalculator = () => {
     localStorage.setItem('foodItems', JSON.stringify(selectedItems));
   }, [selectedItems]);
 
-  // Rest of the component code remains the same
   const updateQuantity = (id, value) => {
     setSelectedItems(items => items.map(item => {
       if (item.id === id) {
@@ -136,42 +135,53 @@ const FoodCalculator = () => {
           <div className="flex justify-end">
             <Button
               onClick={() => setShowAddForm(true)}
-              className="bg-blue-500 hover:bg-blue-600"
+              className="bg-blue-500 hover:bg-blue-600 w-full md:w-auto"
             >
               Add New Item
             </Button>
           </div>
 
           {showAddForm && (
-            <div className="p-4 border rounded bg-gray-50">
-              <div className="flex gap-4 mb-4">
-                <input
-                  type="text"
-                  placeholder="Item name"
-                  value={newItem.name}
-                  onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                  className="flex-1 p-2 border rounded"
-                />
-                <input
-                  type="number"
-                  placeholder="Price"
-                  value={newItem.price}
-                  onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-                  className="w-24 p-2 border rounded"
-                  step="1"
-                  min="0"
-                />
+            <div className="p-3 md:p-4 border rounded bg-gray-50">
+              <div className="flex flex-col space-y-3">
+                <div className="w-full">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Item Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter item name"
+                    value={newItem.name}
+                    onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div className="w-full">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Price
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Enter price"
+                    value={newItem.price}
+                    onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
+                    className="w-full p-2 border rounded"
+                    step="1"
+                    min="0"
+                  />
+                </div>
               </div>
-              <div className="flex gap-2 justify-end">
+              <div className="flex gap-2 justify-end mt-4">
                 <Button
                   variant="outline"
                   onClick={() => setShowAddForm(false)}
+                  className="w-full md:w-auto"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={addNewItem}
-                  className="bg-blue-500 hover:bg-blue-600"
+                  className="bg-blue-500 hover:bg-blue-600 w-full md:w-auto"
                 >
                   Add Item
                 </Button>
