@@ -19,29 +19,42 @@ const CalculatorDialog = ({ isOpen, onClose, currentTotal }) => {
   const [hasCalculated, setHasCalculated] = useState(false);
 
   const handleNumber = (num) => {
-    if (hasCalculated) {
+    if (hasCalculated || display === '0') {
       setDisplay(num);
       setHasCalculated(false);
     } else {
-      setDisplay(display === '0' ? num : display + num);
+      setDisplay(display + num);
     }
   };
 
   const handleOperator = (op) => {
-    setDisplay(display + op);
-    setHasCalculated(false);
+    if (display !== 'Error') {
+      // Prevent adding operator after operator
+      const lastChar = display.slice(-1);
+      if (!['+', '-', '*', '/'].includes(lastChar)) {
+        setDisplay(display + op);
+        setHasCalculated(false);
+      }
+    }
   };
 
   const calculate = () => {
     try {
-      let result;
+      let expression = display;
       if (display.includes('total')) {
-        // Replace 'total' with the actual current total value
-        result = eval(display.replace(/total/g, currentTotal.toString()));
-      } else {
-        result = eval(display);
+        expression = display.replace(/total/g, currentTotal.toString());
       }
-      setDisplay(result.toString());
+      // Validate expression before evaluation
+      if (/^[0-9+\-*/.\s()total]+$/.test(expression)) {
+        const result = eval(expression);
+        if (isFinite(result)) {
+          setDisplay(Number(result.toFixed(8)).toString());
+        } else {
+          setDisplay('Error');
+        }
+      } else {
+        setDisplay('Error');
+      }
       setHasCalculated(true);
     } catch (error) {
       setDisplay('Error');
@@ -54,8 +67,29 @@ const CalculatorDialog = ({ isOpen, onClose, currentTotal }) => {
     setHasCalculated(false);
   };
 
+  const handleBackspace = () => {
+    if (display !== '0' && display !== 'Error') {
+      if (display.length === 1 || hasCalculated) {
+        setDisplay('0');
+      } else {
+        setDisplay(display.slice(0, -1));
+      }
+      setHasCalculated(false);
+    }
+  };
+
   const addTotal = () => {
-    setDisplay(display === '0' ? 'total' : display + 'total');
+    if (display === '0' || hasCalculated) {
+      setDisplay('total');
+    } else {
+      const lastChar = display.slice(-1);
+      if (!['+', '-', '*', '/'].includes(lastChar)) {
+        setDisplay(display + '*total');
+      } else {
+        setDisplay(display + 'total');
+      }
+    }
+    setHasCalculated(false);
   };
 
   return (
@@ -64,13 +98,21 @@ const CalculatorDialog = ({ isOpen, onClose, currentTotal }) => {
         <DialogHeader>
           <DialogTitle>Calculator</DialogTitle>
         </DialogHeader>
-        <div className="p-4">
-          <div className="bg-gray-100 p-4 rounded mb-4 text-right text-xl font-mono">
+        <div className="p-2 sm:p-4">
+          <div className="bg-gray-100 p-4 rounded mb-4 text-right text-xl font-mono break-all min-h-[60px] flex items-center justify-end">
             {display}
           </div>
-          <div className="grid grid-cols-4 gap-2">
-            <Button variant="outline" onClick={clear} className="col-span-2">Clear</Button>
-            <Button variant="outline" onClick={addTotal} className="col-span-2">Add Total</Button>
+          <div className="grid grid-cols-4 gap-1 sm:gap-2">
+            <Button variant="outline" onClick={clear} className="col-span-1">
+              C
+            </Button>
+            <Button variant="outline" onClick={handleBackspace} className="col-span-1">
+              ←
+            </Button>
+            <Button variant="outline" onClick={addTotal} className="col-span-2">
+              Add Total
+            </Button>
+            
             {['7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', '0', '.', '=', '+'].map((btn) => (
               <Button
                 key={btn}
@@ -80,6 +122,7 @@ const CalculatorDialog = ({ isOpen, onClose, currentTotal }) => {
                   else if (['+', '-', '*', '/'].includes(btn)) handleOperator(btn);
                   else handleNumber(btn);
                 }}
+                className="aspect-square sm:aspect-auto text-lg"
               >
                 {btn}
               </Button>
@@ -211,15 +254,7 @@ const FoodCalculator = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setShowCalculator(true)}
-              className="w-auto"
-            >
-              <Calculator className="w-4 h-4 mr-2" />
-              Calculator
-            </Button>
+          <div className="flex justify-end">
             <Button
               onClick={() => setShowAddForm(true)}
               className="bg-blue-500 hover:bg-blue-600 w-full md:w-auto"
@@ -336,15 +371,25 @@ const FoodCalculator = () => {
             ))}
           </div>
 
-          <div className="flex items-center justify-between border-t pt-4">
-            <Button
-              variant="outline"
-              onClick={resetQuantities}
-              className="w-auto"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset All
-            </Button>
+          <div className="flex items-center justify-between border-t pt-4 space-x-4">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={resetQuantities}
+                className="w-auto"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset All
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowCalculator(true)}
+                className="w-auto"
+              >
+                <Calculator className="w-4 h-4 mr-2" />
+                Calculator
+              </Button>
+            </div>
             <div className="text-xl font-semibold">
               Total: {formatIndianPrice(total)}
             </div>
@@ -365,25 +410,25 @@ const FoodCalculator = () => {
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <input
-              type="number"
-              value={editingPrice}
-              onChange={handlePriceEditChange}
-              className="w-full p-2 border rounded"
-              min="0"
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={saveNewPrice} className="bg-green-500 hover:bg-green-600">
-                Save
-              </Button>
+            type="number"
+                value={editingPrice}
+                onChange={handlePriceEditChange}
+                className="w-full p-2 border rounded"
+                min="0"
+              />
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={saveNewPrice} className="bg-green-500 hover:bg-green-600">
+                  Save
+                </Button>
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
-};
-
-export default FoodCalculator;
+          </DialogContent>
+        </Dialog>
+      </Card>
+    );
+  };
+  
+  export default FoodCalculator;
