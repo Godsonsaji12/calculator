@@ -1,26 +1,104 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { Plus, Minus, Edit2, Save, X, MoreVertical, RotateCcw } from 'lucide-react';
+import { Plus, Minus, Edit2, Save, X, MoreVertical, RotateCcw, Calculator } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-const FoodCalculator = () => {
-  const formatIndianPrice = (price) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2
-    }).format(price).replace('INR', '₹');
+const formatIndianPrice = (price) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2
+  }).format(price).replace('INR', '₹');
+};
+
+const CalculatorDialog = ({ isOpen, onClose, currentTotal }) => {
+  const [display, setDisplay] = useState('0');
+  const [hasCalculated, setHasCalculated] = useState(false);
+
+  const handleNumber = (num) => {
+    if (hasCalculated) {
+      setDisplay(num);
+      setHasCalculated(false);
+    } else {
+      setDisplay(display === '0' ? num : display + num);
+    }
   };
 
+  const handleOperator = (op) => {
+    setDisplay(display + op);
+    setHasCalculated(false);
+  };
+
+  const calculate = () => {
+    try {
+      let result;
+      if (display.includes('total')) {
+        // Replace 'total' with the actual current total value
+        result = eval(display.replace(/total/g, currentTotal.toString()));
+      } else {
+        result = eval(display);
+      }
+      setDisplay(result.toString());
+      setHasCalculated(true);
+    } catch (error) {
+      setDisplay('Error');
+      setHasCalculated(true);
+    }
+  };
+
+  const clear = () => {
+    setDisplay('0');
+    setHasCalculated(false);
+  };
+
+  const addTotal = () => {
+    setDisplay(display === '0' ? 'total' : display + 'total');
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Calculator</DialogTitle>
+        </DialogHeader>
+        <div className="p-4">
+          <div className="bg-gray-100 p-4 rounded mb-4 text-right text-xl font-mono">
+            {display}
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            <Button variant="outline" onClick={clear} className="col-span-2">Clear</Button>
+            <Button variant="outline" onClick={addTotal} className="col-span-2">Add Total</Button>
+            {['7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', '0', '.', '=', '+'].map((btn) => (
+              <Button
+                key={btn}
+                variant="outline"
+                onClick={() => {
+                  if (btn === '=') calculate();
+                  else if (['+', '-', '*', '/'].includes(btn)) handleOperator(btn);
+                  else handleNumber(btn);
+                }}
+              >
+                {btn}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const FoodCalculator = () => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
   const [editingPrice, setEditingPrice] = useState('');
   const [newItem, setNewItem] = useState({ name: '', price: '' });
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
 
   useEffect(() => {
     const savedItems = localStorage.getItem('foodItems');
@@ -133,7 +211,15 @@ const FoodCalculator = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="flex justify-end">
+          <div className="flex justify-between">
+            <Button
+              variant="outline"
+              onClick={() => setShowCalculator(true)}
+              className="w-auto"
+            >
+              <Calculator className="w-4 h-4 mr-2" />
+              Calculator
+            </Button>
             <Button
               onClick={() => setShowAddForm(true)}
               className="bg-blue-500 hover:bg-blue-600 w-full md:w-auto"
@@ -264,6 +350,12 @@ const FoodCalculator = () => {
             </div>
           </div>
         </div>
+
+        <CalculatorDialog 
+          isOpen={showCalculator}
+          onClose={() => setShowCalculator(false)}
+          currentTotal={total}
+        />
       </CardContent>
 
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
